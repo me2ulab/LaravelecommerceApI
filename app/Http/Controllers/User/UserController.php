@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\User;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use App\Http\Resources\UserResource;
 use App\User;
-class UserController extends Controller
+class UserController extends ApiController
 {
     /**
      * Display a listing of the resource.
@@ -16,7 +16,8 @@ class UserController extends Controller
     public function index()
     {
         $users=User::all();
-        return response()->json(['data'=>$users],200);
+        //return response()->json(['data'=>$users],200);
+        return $this->showAll($users);
         //
     }
 
@@ -44,7 +45,8 @@ class UserController extends Controller
         $data['verification_token']=User::generateVerificationCode();
         $data['admin']=User::REGULAR_USER;
         $user=User::create($data);
-        return response()->json(['user'=>$user],201);
+       // return response()->json(['user'=>$user],201);
+       return $this->showOne($user,201);
     }
 
     /**
@@ -56,7 +58,8 @@ class UserController extends Controller
     public function show(User $user)
     {
         //
-        return response()->json(['user'=>$user],201);
+       // return response()->json(['user'=>$user],201);
+       return $this->showOne($user);
 
     }
 
@@ -68,10 +71,10 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
         //
-        $user=User::findOrFail($id);
+        //$user=User::findOrFail($id);
         $rules=[
             'email'=>'email|unique:users,email,' .$user->id,
             'password'=>'min:3|confirmed',
@@ -86,7 +89,7 @@ class UserController extends Controller
         if($request->has('email') && $user->email != $request->email)
         {
             $user->verified=User::UNVERIFIED_USER;
-            $user->verfication_token=User::generateVerificationCode();
+            $user->verification_token=User::generateVerificationCode();
             $user->email=$request->email;
         }
         if($request->has('password'))
@@ -97,16 +100,19 @@ class UserController extends Controller
         {
             if(!$user->isVerified())
             {
-                return response()->json(['error'=>'You must be verified to make this change','code'=>401],401);
+               return response()->json(['error'=>'You must be verified to make this change','code'=>401],401);
+               //return $this->errorResponse('You must be verified to make this chang',401);
             }
             $user->admin=$request->admin;
         }
         if(!$user->isDirty())
         {
-            return response()->json(['error'=>'You need to make update','code'=>402],402);
+           // return response()->json(['error'=>'You need to make update','code'=>402],402);
+           return $this->errorResponse('You need to make update',402);
         }
         $user->save();
-        return response()->json(['user'=>$user],200);
+       // return response()->json(['user'=>$user],200);
+       return $this->showOne($user);
     }
 
     /**
@@ -120,7 +126,8 @@ class UserController extends Controller
         //
        // $user=User::findOrFail($id);
         $user->delete();
-        return response()->json(['status'=>'User deleted'],200);
+       // return response()->json(['status'=>'User deleted'],200);
+       return $this->showOne($user); 
 
     }
 }
